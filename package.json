@@ -1,0 +1,32 @@
+{
+  "name": "swish-compliance",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "lint": "eslint",
+    "snowflake:sql": "node scripts/run-sql-file.mjs",
+    "snowflake:phase1:ddl": "node scripts/run-sql-file.mjs src/sql/033_phase_1_lean_extension.sql --execute",
+    "snowflake:phase1:backfill": "node scripts/run-sql-file.mjs src/sql/034_phase_1_backfill.sql --execute"
+  },
+  "dependencies": {
+    "next": "16.2.4",
+    "next-auth": "^4.24.14",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "snowflake-sdk": "^2.4.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.4",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

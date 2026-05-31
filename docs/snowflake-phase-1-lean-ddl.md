@@ -1,0 +1,341 @@
+# Snowflake Phase 1 Lean DDL
+
+This document contains the lean Phase 1 Snowflake DDL as one paste-ready script.
+
+It is designed to extend the current MVP schema with the minimum new tables needed to support the approved Phase 1 workflow model.
+
+## Design Intent
+
+This script follows the lean design approach:
+
+- keep existing MVP tables
+- add only the missing shared business objects
+- use generic workflow tables where possible
+- avoid over-normalizing too early
+- preserve compatibility with the current app while enabling the next architecture step
+
+## What This Script Does
+
+It adds these new tables:
+
+- `PROGRAMS`
+- `CONTROLS`
+- `CONTROL_LINKS`
+- `SOP_VERSIONS`
+- `DOCUMENTS`
+- `CHECKS`
+- `CHECK_RESULTS`
+- `FINDINGS`
+- `TASKS`
+
+It alters these existing tables:
+
+- `SOPS`
+- `AUDITS`
+- `CORRECTIVE_ACTIONS`
+- `EVIDENCE_FILES`
+
+## Single-Run Snowflake SQL
+
+```sql
+-- SWiSH Phase 1 Lean Schema Extension
+-- Paste into Snowflake worksheet and run as a single script.
+-- Adjust database/schema context before execution if needed.
+
+-- Example:
+-- USE DATABASE ECS_DB;
+-- USE SCHEMA ECS_MVP;
+
+/* =========================================================
+   1. PROGRAMS
+   ========================================================= */
+
+CREATE TABLE IF NOT EXISTS PROGRAMS (
+  PROGRAM_ID NUMBER(38,0) AUTOINCREMENT START 1 INCREMENT 1,
+  PROGRAM_CODE VARCHAR(50) NOT NULL,
+  PROGRAM_NAME VARCHAR(200) NOT NULL,
+  PROGRAM_TYPE VARCHAR(50) NOT NULL,
+  BRAND_ID NUMBER(38,0),
+  DEPARTMENT_ID NUMBER(38,0),
+  LOCATION_ID NUMBER(38,0),
+  OWNER_USER_ID NUMBER(38,0),
+  STATUS VARCHAR(30) NOT NULL,
+  TARGET_DATE DATE,
+  DESCRIPTION VARCHAR(2000),
+  CREATED_BY NUMBER(38,0) NOT NULL,
+  CREATED_AT TIMESTAMP_TZ NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  UPDATED_BY NUMBER(38,0),
+  UPDATED_AT TIMESTAMP_TZ,
+  PRIMARY KEY (PROGRAM_ID)
+);
+
+/* =========================================================
+   2. CONTROLS
+   ========================================================= */
+
+CREATE TABLE IF NOT EXISTS CONTROLS (
+  CONTROL_ID NUMBER(38,0) AUTOINCREMENT START 1 INCREMENT 1,
+  CONTROL_CODE VARCHAR(50) NOT NULL,
+  CONTROL_NAME VARCHAR(300) NOT NULL,
+  CONTROL_CATEGORY VARCHAR(100),
+  CONTROL_TYPE VARCHAR(50),
+  BRAND_ID NUMBER(38,0),
+  DEPARTMENT_ID NUMBER(38,0),
+  LOCATION_ID NUMBER(38,0),
+  OWNER_USER_ID NUMBER(38,0),
+  STATUS VARCHAR(30) NOT NULL,
+  REVIEW_FREQUENCY_DAYS NUMBER(38,0),
+  DESCRIPTION VARCHAR(4000),
+  CREATED_BY NUMBER(38,0) NOT NULL,
+  CREATED_AT TIMESTAMP_TZ NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  UPDATED_BY NUMBER(38,0),
+  UPDATED_AT TIMESTAMP_TZ,
+  PRIMARY KEY (CONTROL_ID)
+);
+
+/* =========================================================
+   3. CONTROL_LINKS
+   ========================================================= */
+
+CREATE TABLE IF NOT EXISTS CONTROL_LINKS (
+  LINK_ID NUMBER(38,0) AUTOINCREMENT START 1 INCREMENT 1,
+  CONTROL_ID NUMBER(38,0) NOT NULL,
+  ENTITY_TYPE VARCHAR(50) NOT NULL,
+  ENTITY_ID NUMBER(38,0) NOT NULL,
+  LINK_ROLE VARCHAR(30) NOT NULL,
+  IS_PRIMARY BOOLEAN NOT NULL DEFAULT FALSE,
+  CREATED_AT TIMESTAMP_TZ NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  PRIMARY KEY (LINK_ID)
+);
+
+/* =========================================================
+   4. SOP_VERSIONS
+   ========================================================= */
+
+CREATE TABLE IF NOT EXISTS SOP_VERSIONS (
+  SOP_VERSION_ID NUMBER(38,0) AUTOINCREMENT START 1 INCREMENT 1,
+  SOP_ID NUMBER(38,0) NOT NULL,
+  VERSION_NO VARCHAR(30) NOT NULL,
+  CONTENT_MODE VARCHAR(20) NOT NULL,
+  CONTENT_BODY VARCHAR,
+  FILE_NAME VARCHAR(255),
+  FILE_URL VARCHAR(1000),
+  FILE_SIZE NUMBER(18,0),
+  MIME_TYPE VARCHAR(100),
+  STATUS VARCHAR(30) NOT NULL,
+  CHANGE_TYPE VARCHAR(20) DEFAULT 'MAJOR',
+  SUBMITTED_BY NUMBER(38,0),
+  SUBMITTED_AT TIMESTAMP_TZ,
+  APPROVER_USER_ID NUMBER(38,0),
+  APPROVED_BY NUMBER(38,0),
+  APPROVED_AT TIMESTAMP_TZ,
+  REJECTED_BY NUMBER(38,0),
+  REJECTED_AT TIMESTAMP_TZ,
+  DECISION_REMARKS VARCHAR(2000),
+  EFFECTIVE_FROM DATE,
+  NEXT_REVIEW_DATE DATE,
+  ACK_REQUIRED BOOLEAN NOT NULL DEFAULT FALSE,
+  ACK_SCOPE_TYPE VARCHAR(30),
+  REMARKS VARCHAR(2000),
+  CREATED_BY NUMBER(38,0) NOT NULL,
+  CREATED_AT TIMESTAMP_TZ NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  UPDATED_BY NUMBER(38,0),
+  UPDATED_AT TIMESTAMP_TZ,
+  PRIMARY KEY (SOP_VERSION_ID)
+);
+
+/* =========================================================
+   5. DOCUMENTS
+   ========================================================= */
+
+CREATE TABLE IF NOT EXISTS DOCUMENTS (
+  DOCUMENT_ID NUMBER(38,0) AUTOINCREMENT START 1 INCREMENT 1,
+  DOCUMENT_CODE VARCHAR(50),
+  DOCUMENT_NAME VARCHAR(300) NOT NULL,
+  DOCUMENT_TYPE VARCHAR(50) NOT NULL,
+  CATEGORY VARCHAR(100),
+  BRAND_ID NUMBER(38,0),
+  DEPARTMENT_ID NUMBER(38,0),
+  LOCATION_ID NUMBER(38,0),
+  OWNER_USER_ID NUMBER(38,0),
+  STATUS VARCHAR(30) NOT NULL,
+  CURRENT_EVIDENCE_ID NUMBER(38,0),
+  ISSUE_DATE DATE,
+  EXPIRY_DATE DATE,
+  REVIEW_DATE DATE,
+  SOURCE_TYPE VARCHAR(20),
+  REMARKS VARCHAR(2000),
+  CREATED_BY NUMBER(38,0) NOT NULL,
+  CREATED_AT TIMESTAMP_TZ NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  UPDATED_BY NUMBER(38,0),
+  UPDATED_AT TIMESTAMP_TZ,
+  PRIMARY KEY (DOCUMENT_ID)
+);
+
+/* =========================================================
+   6. CHECKS
+   ========================================================= */
+
+CREATE TABLE IF NOT EXISTS CHECKS (
+  CHECK_ID NUMBER(38,0) AUTOINCREMENT START 1 INCREMENT 1,
+  CONTROL_ID NUMBER(38,0) NOT NULL,
+  CHECK_NAME VARCHAR(300) NOT NULL,
+  CHECK_TYPE VARCHAR(50) NOT NULL,
+  SOURCE_ENTITY_TYPE VARCHAR(50),
+  SOURCE_ENTITY_ID NUMBER(38,0),
+  SEVERITY VARCHAR(30) DEFAULT 'Medium',
+  IS_ACTIVE BOOLEAN NOT NULL DEFAULT TRUE,
+  OWNER_USER_ID NUMBER(38,0),
+  CREATED_BY NUMBER(38,0) NOT NULL,
+  CREATED_AT TIMESTAMP_TZ NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  UPDATED_BY NUMBER(38,0),
+  UPDATED_AT TIMESTAMP_TZ,
+  PRIMARY KEY (CHECK_ID)
+);
+
+/* =========================================================
+   7. CHECK_RESULTS
+   ========================================================= */
+
+CREATE TABLE IF NOT EXISTS CHECK_RESULTS (
+  CHECK_RESULT_ID NUMBER(38,0) AUTOINCREMENT START 1 INCREMENT 1,
+  CHECK_ID NUMBER(38,0) NOT NULL,
+  BRAND_ID NUMBER(38,0),
+  DEPARTMENT_ID NUMBER(38,0),
+  LOCATION_ID NUMBER(38,0),
+  TARGET_ENTITY_TYPE VARCHAR(50),
+  TARGET_ENTITY_ID NUMBER(38,0),
+  STATUS VARCHAR(30) NOT NULL,
+  LAST_EVALUATED_AT TIMESTAMP_TZ,
+  NEXT_EVALUATION_AT TIMESTAMP_TZ,
+  DETAILS VARIANT,
+  PRIMARY KEY (CHECK_RESULT_ID)
+);
+
+/* =========================================================
+   8. FINDINGS
+   ========================================================= */
+
+CREATE TABLE IF NOT EXISTS FINDINGS (
+  FINDING_ID NUMBER(38,0) AUTOINCREMENT START 1 INCREMENT 1,
+  AUDIT_ID NUMBER(38,0) NOT NULL,
+  RESPONSE_ID NUMBER(38,0),
+  CONTROL_ID NUMBER(38,0),
+  TITLE VARCHAR(300) NOT NULL,
+  DESCRIPTION VARCHAR(2000),
+  SEVERITY VARCHAR(30) NOT NULL,
+  STATUS VARCHAR(30) NOT NULL,
+  ROOT_CAUSE VARCHAR(2000),
+  OWNER_USER_ID NUMBER(38,0),
+  DUE_DATE DATE,
+  CREATED_BY NUMBER(38,0) NOT NULL,
+  CREATED_AT TIMESTAMP_TZ NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  UPDATED_BY NUMBER(38,0),
+  UPDATED_AT TIMESTAMP_TZ,
+  PRIMARY KEY (FINDING_ID)
+);
+
+/* =========================================================
+   9. TASKS
+   ========================================================= */
+
+CREATE TABLE IF NOT EXISTS TASKS (
+  TASK_ID NUMBER(38,0) AUTOINCREMENT START 1 INCREMENT 1,
+  TASK_TYPE VARCHAR(50) NOT NULL,
+  SOURCE_ENTITY_TYPE VARCHAR(50) NOT NULL,
+  SOURCE_ENTITY_ID NUMBER(38,0) NOT NULL,
+  RELATED_ENTITY_TYPE VARCHAR(50),
+  RELATED_ENTITY_ID NUMBER(38,0),
+  TITLE VARCHAR(300) NOT NULL,
+  DESCRIPTION VARCHAR(2000),
+  BRAND_ID NUMBER(38,0),
+  DEPARTMENT_ID NUMBER(38,0),
+  LOCATION_ID NUMBER(38,0),
+  PHASE_KEY VARCHAR(50),
+  PHASE_LABEL VARCHAR(100),
+  PHASE_ORDER NUMBER(38,0),
+  ASSIGNED_TO NUMBER(38,0),
+  PRIORITY VARCHAR(20),
+  STATUS VARCHAR(30) NOT NULL,
+  DUE_DATE DATE,
+  STARTED_AT TIMESTAMP_TZ,
+  COMPLETED_AT TIMESTAMP_TZ,
+  BLOCKED_REASON VARCHAR(1000),
+  DETAILS VARIANT,
+  CREATED_BY NUMBER(38,0) NOT NULL,
+  CREATED_AT TIMESTAMP_TZ NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  UPDATED_BY NUMBER(38,0),
+  UPDATED_AT TIMESTAMP_TZ,
+  PRIMARY KEY (TASK_ID)
+);
+
+/* =========================================================
+   10. ALTER SOPS
+   ========================================================= */
+
+ALTER TABLE SOPS ADD COLUMN IF NOT EXISTS CURRENT_VERSION_ID NUMBER(38,0);
+ALTER TABLE SOPS ADD COLUMN IF NOT EXISTS PROGRAM_ID NUMBER(38,0);
+ALTER TABLE SOPS ADD COLUMN IF NOT EXISTS RECORD_STATUS VARCHAR(30);
+
+/* =========================================================
+   11. ALTER AUDITS
+   ========================================================= */
+
+ALTER TABLE AUDITS ADD COLUMN IF NOT EXISTS PROGRAM_ID NUMBER(38,0);
+ALTER TABLE AUDITS ADD COLUMN IF NOT EXISTS AUDIT_TYPE VARCHAR(30);
+
+/* =========================================================
+   12. ALTER CORRECTIVE_ACTIONS
+   ========================================================= */
+
+ALTER TABLE CORRECTIVE_ACTIONS ADD COLUMN IF NOT EXISTS FINDING_ID NUMBER(38,0);
+ALTER TABLE CORRECTIVE_ACTIONS ADD COLUMN IF NOT EXISTS CONTROL_ID NUMBER(38,0);
+
+/* =========================================================
+   13. ALTER EVIDENCE_FILES
+   ========================================================= */
+
+ALTER TABLE EVIDENCE_FILES ADD COLUMN IF NOT EXISTS DOCUMENT_ID NUMBER(38,0);
+ALTER TABLE EVIDENCE_FILES ADD COLUMN IF NOT EXISTS VERSION_NO VARCHAR(30);
+ALTER TABLE EVIDENCE_FILES ADD COLUMN IF NOT EXISTS VERSION_STATUS VARCHAR(30);
+ALTER TABLE EVIDENCE_FILES ADD COLUMN IF NOT EXISTS IS_CURRENT BOOLEAN DEFAULT FALSE;
+ALTER TABLE EVIDENCE_FILES ADD COLUMN IF NOT EXISTS ISSUE_DATE DATE;
+ALTER TABLE EVIDENCE_FILES ADD COLUMN IF NOT EXISTS EXPIRY_DATE DATE;
+ALTER TABLE EVIDENCE_FILES ADD COLUMN IF NOT EXISTS REVIEW_DATE DATE;
+ALTER TABLE EVIDENCE_FILES ADD COLUMN IF NOT EXISTS APPROVED_BY NUMBER(38,0);
+ALTER TABLE EVIDENCE_FILES ADD COLUMN IF NOT EXISTS APPROVED_AT TIMESTAMP_TZ;
+ALTER TABLE EVIDENCE_FILES ADD COLUMN IF NOT EXISTS REJECTED_BY NUMBER(38,0);
+ALTER TABLE EVIDENCE_FILES ADD COLUMN IF NOT EXISTS REJECTED_AT TIMESTAMP_TZ;
+
+/* =========================================================
+   14. OPTIONAL REFERENCE COMMENTS
+   ========================================================= */
+
+COMMENT ON TABLE PROGRAMS IS 'Phase 1 internal compliance programs / initiatives.';
+COMMENT ON TABLE CONTROLS IS 'Reusable compliance controls shared across SOPs, documents, audits, and CAPA.';
+COMMENT ON TABLE CONTROL_LINKS IS 'Generic many-to-many links from controls to source entities.';
+COMMENT ON TABLE SOP_VERSIONS IS 'Immutable SOP / policy versions under parent SOPS records.';
+COMMENT ON TABLE DOCUMENTS IS 'Governed document parent records using EVIDENCE_FILES as file/version payload storage.';
+COMMENT ON TABLE CHECKS IS 'Reusable validations linked to controls.';
+COMMENT ON TABLE CHECK_RESULTS IS 'Scoped evaluation results for checks.';
+COMMENT ON TABLE FINDINGS IS 'Audit findings that sit between audit responses and CAPA.';
+COMMENT ON TABLE TASKS IS 'Generic workflow queue for approvals, acknowledgments, evidence tasks, and remediation.';
+```
+
+## Notes
+
+- This script intentionally avoids foreign keys to stay aligned with the current MVP style and to reduce migration friction in Snowflake.
+- This is a structural foundation script only. It does not migrate existing data.
+- After running this, the next step should be backfill and migration logic for:
+  - `SOPS -> SOP_VERSIONS`
+  - `EVIDENCE_FILES -> DOCUMENTS + EVIDENCE_FILES version metadata`
+  - `AUDIT_RESPONSES -> FINDINGS` where applicable
+
+## Recommended Next Step
+
+After this DDL is created, the next database artifact should be a migration script that:
+
+1. creates one initial `SOP_VERSIONS` row for each current `SOPS` row
+2. creates governed `DOCUMENTS` parents where current evidence records need document control
+3. backfills `CURRENT_VERSION_ID` on `SOPS`
+4. prepares starter `PROGRAMS` and `CONTROLS` seed records

@@ -1,0 +1,16 @@
+Phase,TasksModules,StartDate,EndDate,DurationWorkingDays,Deliverables
+Phase 0 - Foundation And Migration,Snowflake backfill execution and schema validation,2026-06-01,2026-06-02,2,Backfill run verified and new schema validated in development
+Phase 0 - Foundation And Migration,Compatibility services and current-version reads,2026-06-03,2026-06-04,2,App reads safely from parent plus current version model
+Phase 0 - Foundation And Migration,Regression baseline and release guardrails,2026-06-05,2026-06-07,2,Baseline regression checklist and safe dev rollout guardrails
+Phase 1 - SOP Governance,SOP version write model and approval workflow hardening,2026-06-08,2026-06-11,4,Version-safe SOP write path with approval state integrity
+Phase 1 - SOP Governance,SOP versions UI and explicit new-version flow,2026-06-12,2026-06-16,4,Version-aware SOP detail UX with new-version creation flow
+Phase 1 - SOP Governance,SOP regression testing and UAT fixes,2026-06-17,2026-06-18,2,Stabilized SOP lifecycle ready for wider usage
+Phase 2 - Documents And Controls,Documents service APIs and evidence normalization,2026-06-19,2026-06-22,3,Governed DOCUMENTS module and normalized evidence links
+Phase 2 - Documents And Controls,Documents UI freshness and review workflow,2026-06-23,2026-06-24,2,Document list and detail views with freshness and review states
+Phase 2 - Documents And Controls,Controls service APIs and control-link model,2026-06-25,2026-06-28,3,Controls module and reusable control-link relationships
+Phase 2 - Documents And Controls,Controls UI and linked-record surfaces,2026-06-29,2026-06-30,2,Control detail views linked to SOPs and documents
+Phase 3 - Checks Tasks Audits Findings,Checks engine and check-result rollups,2026-07-01,2026-07-03,3,Operational checks with result history and health rollups
+Phase 3 - Checks Tasks Audits Findings,Generic tasks engine and Action Center rules,2026-07-05,2026-07-07,3,Task generation logic and first Action Center queue rules
+Phase 3 - Checks Tasks Audits Findings,Audit findings and CAPA alignment,2026-07-08,2026-07-12,4,Audits raise findings and CAPA traces to findings and controls
+Phase 4 - Reports And Release,Reports datasets and dashboard realignment,2026-07-13,2026-07-15,3,Manager and executive reports with updated operational dashboard
+Phase 4 - Reports And Release,UAT performance tuning and production hardening,2026-07-16,2026-07-19,3,Production-ready Phase 1 release package
