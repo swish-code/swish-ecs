@@ -29,8 +29,9 @@ yarn-error.log*
 .pnpm-debug.log*
 snowflake.log
 
-# env files
+# env files (keep the example committed)
 .env*
+!.env.example
 
 # vercel
 .vercel
